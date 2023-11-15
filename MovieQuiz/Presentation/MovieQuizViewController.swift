@@ -77,11 +77,19 @@ final class MovieQuizViewController: UIViewController {
     
     @IBOutlet weak var noButton: UIButton!
     
+    override var preferredStatusBarStyle: UIStatusBarStyle {
+        return .lightContent
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        imageView.layer.masksToBounds = true
+        imageView.layer.cornerRadius = 20
+        
         let firstQuestion = questions[currentQuestionIndex]
         let viewModel = convertQuestionToViewModel(model: firstQuestion)
+        
         showQuizQuestion(quiz: viewModel)
     }
     
@@ -114,9 +122,6 @@ final class MovieQuizViewController: UIViewController {
         counterLabel.text = step.questionNumber
         textLabel.text = step.question
         imageView.image = step.image
-        
-        imageView.layer.masksToBounds = true
-        imageView.layer.cornerRadius = 20
     }
     
     private func showResultAlert(quiz result: QuizResultsViewModel) {
