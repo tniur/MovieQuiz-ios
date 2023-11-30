@@ -9,6 +9,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
     private var alertPresenter: AlertPresenter = AlertPresenter()
     private var currentQuestion: QuizQuestion?
+    private var statisticService: StatisticServiceProtocol = StatisticServiceImplementation()
 
     @IBOutlet private weak var imageView: UIImageView!
     
@@ -83,10 +84,11 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     }
     
     private func showResultAlert() {
+        statisticService.store(correct: correctAnswers, total: questionsAmount)
         
         let alertModel = AlertModel(
             title: "Этот раунд закончен",
-            message: "Ваш результат: \(self.correctAnswers)/\(self.questionsAmount)",
+            message: makeResultAlertMessage(),
             buttonText: "Сыграть еще раз",
             completion: { [weak self] in
                 self?.currentQuestionIndex = 0
@@ -95,6 +97,16 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             })
         
         alertPresenter.show(viewModel: alertModel)
+    }
+    
+    private func makeResultAlertMessage() -> String {
+        let currentResult = "Ваш результат: \(self.correctAnswers)/\(self.questionsAmount)\n"
+        let totalGame = "Количество сыгранных квизов: \(statisticService.gamesCount)\n"
+        let record = "Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))\n"
+        let accuracy = "Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%"
+        
+        let result = currentResult + totalGame + record + accuracy
+        return result
     }
     
     private func convertQuestionToViewModel(model: QuizQuestion) -> QuizStepViewModel {

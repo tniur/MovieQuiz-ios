@@ -1,32 +1,45 @@
 import Foundation
 
-struct GameRecord: Codable {
-    let correct: Int
-    let total: Int
-    let date: Date
-    
-    func isBetterThan(_ result: GameRecord) -> Bool {
-        correct > result.correct
-    }
-}
-
-protocol StatisticService {
-    var totalAccuracy: Double { get }
-    var gamesCount: Int { get }
-    var bestGame: GameRecord { get }
-    func store(correct count: Int, total amount: Int)
-}
-
-class StatisticServiceImplementation: StatisticService {
+final class StatisticServiceImplementation: StatisticServiceProtocol {
     private enum Keys: String {
         case correct, total, bestGame, gamesCount
     }
     
     private let userDefaults = UserDefaults.standard
     
-    var totalAccuracy: Double
+    var correctAnswers: Int {
+        get {
+            userDefaults.integer(forKey: Keys.correct.rawValue)
+        }
+        
+        set {
+            userDefaults.set(newValue, forKey: Keys.correct.rawValue)
+        }
+    }
     
-    var gamesCount: Int
+    var totalAnswers: Int {
+        get {
+            userDefaults.integer(forKey: Keys.total.rawValue)
+        }
+        
+        set {
+            userDefaults.set(newValue, forKey: Keys.total.rawValue)
+        }
+    }
+    
+    var totalAccuracy: Double {
+        (Double(correctAnswers) / Double(totalAnswers)) * 100.0
+    }
+    
+    var gamesCount: Int {
+        get {
+            userDefaults.integer(forKey: Keys.gamesCount.rawValue)
+        }
+        
+        set {
+            userDefaults.set(newValue, forKey: Keys.gamesCount.rawValue)
+        }
+    }
     
     var bestGame: GameRecord {
         get {
@@ -48,7 +61,16 @@ class StatisticServiceImplementation: StatisticService {
         }
     }
     
-    func store(correct count: Int, total amount: Int) {
-        <#code#>
+    func store(correct: Int, total: Int) {
+        self.gamesCount += 1
+        self.correctAnswers += correct
+        self.totalAnswers += total
+        
+        let newGameRecord = GameRecord(correct: correct, total: total, date: Date())
+        let prevGameRecord = self.bestGame
+        
+        if !prevGameRecord.isBetterThan(newGameRecord) {
+            self.bestGame = newGameRecord
+        }
     }
 }
