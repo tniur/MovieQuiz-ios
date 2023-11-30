@@ -7,6 +7,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private let questionsAmount: Int = 10
     
     private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
+    private var alertPresenter: AlertPresenter = AlertPresenter()
     private var currentQuestion: QuizQuestion?
 
     @IBOutlet private weak var imageView: UIImageView!
@@ -30,6 +31,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         imageView.layer.cornerRadius = 20
         
         questionFactory.delegate = self
+        alertPresenter.viewController = self
+        
         questionFactory.requestNextQuestion()
     }
 
@@ -72,34 +75,26 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     private func showNextQuestionOrResults() {
         if currentQuestionIndex == questionsAmount - 1 {
-            let viewModel = QuizResultsViewModel(
-                title: "Этот раунд закончен",
-                text: "Ваш результат: \(self.correctAnswers)/\(self.questionsAmount)",
-                buttonText: "Сыграть еще раз")
-            showResultAlert(quiz: viewModel)
+            showResultAlert()
         } else {
             currentQuestionIndex += 1
             questionFactory.requestNextQuestion()
         }
     }
     
-    private func showResultAlert(quiz result: QuizResultsViewModel) {
-        let alert = UIAlertController(
-            title: result.title,
-            message: result.text,
-            preferredStyle: .alert)
+    private func showResultAlert() {
         
-        let action = UIAlertAction(title: result.buttonText, style: .default) { [weak self] _ in
-            guard let self = self else { return }
-            self.currentQuestionIndex = 0
-            self.correctAnswers = 0
-            
-            self.questionFactory.requestNextQuestion()
-        }
+        let alertModel = AlertModel(
+            title: "Этот раунд закончен",
+            message: "Ваш результат: \(self.correctAnswers)/\(self.questionsAmount)",
+            buttonText: "Сыграть еще раз",
+            completion: { [weak self] in
+                self?.currentQuestionIndex = 0
+                self?.correctAnswers = 0
+                self?.questionFactory.requestNextQuestion()
+            })
         
-        alert.addAction(action)
-        
-        self.present(alert, animated: true, completion: nil)
+        alertPresenter.show(viewModel: alertModel)
     }
     
     private func convertQuestionToViewModel(model: QuizQuestion) -> QuizStepViewModel {
