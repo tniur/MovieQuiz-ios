@@ -1,7 +1,7 @@
 import UIKit
 
 final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
-
+    
     private var currentQuestionIndex = 0
     private var correctAnswers = 0
     private let questionsAmount: Int = 10
@@ -10,21 +10,21 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private var alertPresenter: AlertPresenter = AlertPresenter()
     private var currentQuestion: QuizQuestion?
     private var statisticService: StatisticServiceProtocol = StatisticServiceImplementation()
-
+    
     @IBOutlet private weak var imageView: UIImageView!
     
     @IBOutlet private weak var textLabel: UILabel!
     
     @IBOutlet private weak var counterLabel: UILabel!
     
-    @IBOutlet weak var yesButton: UIButton!
+    @IBOutlet private weak var yesButton: UIButton!
     
-    @IBOutlet weak var noButton: UIButton!
+    @IBOutlet private weak var noButton: UIButton!
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -36,7 +36,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         
         questionFactory.requestNextQuestion()
     }
-
+    
     func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else {
             return
@@ -68,8 +68,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
             self.imageView.layer.borderWidth = 0
-            self.yesButton.isEnabled = true
-            self.noButton.isEnabled = true
+            setButtonsStatus(isEnabled: true)
             self.showNextQuestionOrResults()
         }
     }
@@ -117,23 +116,24 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         return questionStep
     }
     
-    @IBAction private func yesButtonClicked(_ sender: UIButton) {
+    private func setButtonsStatus(isEnabled: Bool) {
+        yesButton.isEnabled = isEnabled
+        noButton.isEnabled = isEnabled
+    }
+    
+    private func answerGiven(givenAnswer: Bool) {
         guard let currentQuestion = currentQuestion else { return }
         
-        yesButton.isEnabled = false
-        noButton.isEnabled = false
+        setButtonsStatus(isEnabled: false)
         
-        let givenAnswer = true
         showAnswerResult(isCorrect: currentQuestion.correctAnswer == givenAnswer)
     }
     
+    @IBAction private func yesButtonClicked(_ sender: UIButton) {
+        answerGiven(givenAnswer: true)
+    }
+    
     @IBAction private func noButtonClicked(_ sender: UIButton) {
-        guard let currentQuestion = currentQuestion else { return }
-        
-        yesButton.isEnabled = false
-        noButton.isEnabled = false
-        
-        let givenAnswer = false
-        showAnswerResult(isCorrect: currentQuestion.correctAnswer == givenAnswer)
+        answerGiven(givenAnswer: false)
     }
 }
