@@ -6,7 +6,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     private var correctAnswers = 0
     private let questionsAmount: Int = 10
     
-    private var questionFactory: QuestionFactoryProtocol = QuestionFactory()
+    private var questionFactory: QuestionFactoryProtocol?
     private var alertPresenter: AlertPresenter = AlertPresenter()
     private var currentQuestion: QuizQuestion?
     private var statisticService: StatisticServiceProtocol = StatisticServiceImplementation()
@@ -21,6 +21,8 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     @IBOutlet private weak var noButton: UIButton!
     
+    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
+    
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
     }
@@ -31,10 +33,41 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         imageView.layer.masksToBounds = true
         imageView.layer.cornerRadius = 20
         
-        questionFactory.delegate = self
+        questionFactory = QuestionFactory(
+            moviesLoader: MoviesLoader(),
+            delegate: self
+        )
+        
         alertPresenter.viewController = self
         
-        questionFactory.requestNextQuestion()
+        showLoadingIndicator()
+        questionFactory?.loadData()
+    }
+    
+    private func showLoadingIndicator() {
+        activityIndicator.isHidden = false
+        activityIndicator.startAnimating()
+    }
+    
+    private func hideLoadingIndicator() {
+        activityIndicator.stopAnimating()
+        activityIndicator.isHidden = true
+    }
+    
+    private func showNetworkError(message: String) {
+        hideLoadingIndicator()
+        
+        let alertModel = AlertModel(
+            title: "Ошибка",
+            message: message,
+            buttonText: "Попробовать ещё раз",
+            completion: { [weak self] in
+                self?.currentQuestionIndex = 0
+                self?.correctAnswers = 0
+                self?.questionFactory?.requestNextQuestion()
+            })
+        
+        alertPresenter.show(viewModel: alertModel)
     }
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
@@ -48,6 +81,15 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         DispatchQueue.main.async { [weak self] in
             self?.showQuizQuestion(quiz: viewModel)
         }
+    }
+    
+    func didLoadDataFromServer() {
+        activityIndicator.isHidden = true
+        questionFactory?.requestNextQuestion()
+    }
+    
+    func didFailToLoadData(with error: Error) {
+        showNetworkError(message: error.localizedDescription)
     }
     
     private func showQuizQuestion(quiz step: QuizStepViewModel) {
@@ -78,7 +120,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             showResultAlert()
         } else {
             currentQuestionIndex += 1
-            questionFactory.requestNextQuestion()
+            questionFactory?.requestNextQuestion()
         }
     }
     
@@ -92,7 +134,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             completion: { [weak self] in
                 self?.currentQuestionIndex = 0
                 self?.correctAnswers = 0
-                self?.questionFactory.requestNextQuestion()
+                self?.questionFactory?.requestNextQuestion()
             })
         
         alertPresenter.show(viewModel: alertModel)
@@ -110,7 +152,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     private func convertQuestionToViewModel(model: QuizQuestion) -> QuizStepViewModel {
         let questionStep = QuizStepViewModel(
-            image: UIImage(named: model.image) ?? UIImage(),
+            image: UIImage(data: model.image) ?? UIImage(),
             question: model.text,
             questionNumber: "\(currentQuestionIndex + 1)/\(questionsAmount)")
         return questionStep
