@@ -8,15 +8,14 @@
 import UIKit
 
 final class MovieQuizPresenter: QuestionFactoryDelegate {
-    let questionsAmount: Int = 10
+    private let questionsAmount: Int = 10
     private var currentQuestionIndex: Int = 0
+    private var correctAnswers: Int = 0
     
-    var correctAnswers = 0
-    var currentQuestion: QuizQuestion?
     private weak var viewController: MovieQuizViewControllerProtocol?
-    var questionFactory: QuestionFactoryProtocol?
-    var alertPresenter: AlertPresenter?
-    let statisticService: StatisticServiceProtocol!
+    private var currentQuestion: QuizQuestion?
+    private var questionFactory: QuestionFactoryProtocol?
+    private let statisticService: StatisticServiceProtocol!
     
     init(viewController: MovieQuizViewControllerProtocol) {
         self.viewController = viewController
@@ -73,6 +72,8 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
     }
     
     func makeResultAlertMessage() -> String {
+        statisticService.store(correct: correctAnswers, total: questionsAmount)
+        
         let currentResult = "Ваш результат: \(self.correctAnswers)/\(self.questionsAmount)\n"
         let totalGame = "Количество сыгранных квизов: \(statisticService.gamesCount)\n"
         let record = "Рекорд: \(statisticService.bestGame.correct)/\(statisticService.bestGame.total) (\(statisticService.bestGame.date.dateTimeString))\n"
@@ -83,7 +84,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         return result
     }
     
-    func proceedToNextQuestionOrResults() {
+    private func proceedToNextQuestionOrResults() {
         if self.isLastQuestion() {
             viewController?.showResultAlert()
         } else {
@@ -92,7 +93,7 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         }
     }
     
-    func proceedWithAnswer(isCorrect: Bool) {
+    private func proceedWithAnswer(isCorrect: Bool) {
         
         didAnswer(isCorrectAnswer: isCorrect)
         
@@ -100,12 +101,11 @@ final class MovieQuizPresenter: QuestionFactoryDelegate {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
             guard let self = self else { return }
-            self.alertPresenter = alertPresenter
             self.proceedToNextQuestionOrResults()
         }
     }
     
-    func didAnswer(isCorrectAnswer: Bool) {
+    private func didAnswer(isCorrectAnswer: Bool) {
         if isCorrectAnswer {
             correctAnswers += 1
         }

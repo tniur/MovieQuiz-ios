@@ -2,20 +2,15 @@ import UIKit
 
 final class MovieQuizViewController: UIViewController, MovieQuizViewControllerProtocol {
     
-    private var alertPresenter: AlertPresenter = AlertPresenter()
-    
-    private var presenter: MovieQuizPresenter!
-    
-    @IBOutlet weak var imageView: UIImageView!
-    
+    @IBOutlet private weak var imageView: UIImageView!
     @IBOutlet private weak var textLabel: UILabel!
-    
     @IBOutlet private weak var counterLabel: UILabel!
+    @IBOutlet private weak var activityIndicator: UIActivityIndicatorView!
+    @IBOutlet private weak var yesButton: UIButton!
+    @IBOutlet private weak var noButton: UIButton!
     
-    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
-    
-    @IBOutlet weak var yesButton: UIButton!
-    @IBOutlet weak var noButton: UIButton!
+    private var alertPresenter: AlertPresenter = AlertPresenter()
+    private var presenter: MovieQuizPresenter?
     
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
@@ -52,14 +47,14 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
             message: message,
             buttonText: "Попробовать ещё раз",
             completion: { [weak self] in
-                self?.presenter.restartGame()
+                self?.presenter?.restartGame()
             })
         
         alertPresenter.show(viewModel: alertModel)
     }
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
-        presenter.didReceiveNextQuestion(question: question)
+        presenter?.didReceiveNextQuestion(question: question)
     }
     
     func highlightImageBorder(isCorrectAnswer: Bool) {
@@ -78,15 +73,13 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
     }
     
     func showResultAlert() {
-        presenter.statisticService.store(correct: presenter.correctAnswers, total: presenter.questionsAmount)
         
         let alertModel = AlertModel(
             title: "Этот раунд окончен!",
-            message: presenter.makeResultAlertMessage(),
+            message: presenter?.makeResultAlertMessage() ?? "Ошибка загрузки статистики",
             buttonText: "Сыграть ещё раз",
             completion: { [weak self] in
-                self?.presenter.restartGame()
-                self?.presenter.questionFactory?.requestNextQuestion()
+                self?.presenter?.restartGame()
             })
         
         alertPresenter.show(viewModel: alertModel)
@@ -94,11 +87,11 @@ final class MovieQuizViewController: UIViewController, MovieQuizViewControllerPr
     
     @IBAction private func yesButtonClicked(_ sender: UIButton) {
         sender.isEnabled = false
-        presenter.yesButtonClicked()
+        presenter?.yesButtonClicked()
     }
     
     @IBAction private func noButtonClicked(_ sender: UIButton) {
         sender.isEnabled = false
-        presenter.noButtonClicked()
+        presenter?.noButtonClicked()
     }
 }
